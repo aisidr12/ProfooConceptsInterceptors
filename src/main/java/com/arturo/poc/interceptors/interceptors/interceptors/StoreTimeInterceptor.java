@@ -1,8 +1,12 @@
 package com.arturo.poc.interceptors.interceptors.interceptors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -22,17 +26,21 @@ public class StoreTimeInterceptor implements HandlerInterceptor {
       throws Exception {
 
     Calendar calendar = Calendar.getInstance();
-    int hour = calendar.get(Calendar.HOUR_OF_DAY);
-
-    if(hour < storeOpenTime || hour > storeCloseTime) {
-      response.getWriter().println("The store is close, please come back later");
+    int actualHour = calendar.get(Calendar.HOUR_OF_DAY);
+//abro 1 y cierro 12
+    if(actualHour < storeOpenTime || actualHour > storeCloseTime) {
+      ObjectMapper objectMapper = new ObjectMapper();
+      Map<String,String> responseJson = new HashMap<>();
+      responseJson.put("message", "The store is close, please come back later");
+      responseJson.put("time", LocalDateTime.now().toString());
+      responseJson.put("error", "Store is close");
+      String storeIsClose = objectMapper.writeValueAsString(responseJson);
+      response.getWriter().println(storeIsClose);
       response.setContentType("application/json");
       response.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return false;
     }
-    response.getWriter().println("Welcome to the store");
-    response.setContentType("application/json");
-    response.setStatus(HttpServletResponse.SC_OK);
+    request.setAttribute("message", "Welcome to the store at " + LocalDateTime.now());
     return true;
   }
 
